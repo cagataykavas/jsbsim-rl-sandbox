@@ -12,7 +12,7 @@ from env import JSBSimConfig, JSBSimRLEnv
 def run(steps: int, seed: int, output: Path) -> None:
     rng = np.random.default_rng(seed)
     env = JSBSimRLEnv(JSBSimConfig(max_steps=steps))
-    observation = env.reset()
+    env.reset()
     rows = []
     total_reward = 0.0
 
@@ -24,7 +24,7 @@ def run(steps: int, seed: int, output: Path) -> None:
             rng.normal(0.0, 0.04),
             0.35 + rng.normal(0.0, 0.05),
         ], dtype=np.float32)
-        observation, reward, done, info = env.step(action)
+        _observation, reward, done, info = env.step(action)
         total_reward += reward
         rows.append({**info, "reward": reward})
         if done:

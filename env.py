@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
 import jsbsim
+import numpy as np
 
 
 @dataclass
@@ -25,6 +25,7 @@ class JSBSimRLEnv:
 
     def _new_exec(self) -> jsbsim.FGFDMExec:
         fdm = jsbsim.FGFDMExec(None)
+        fdm.set_debug_level(0)
         fdm.set_dt(self.config.dt)
         if not fdm.load_script(self.config.script):
             raise RuntimeError(f"Could not load public JSBSim script: {self.config.script}")
@@ -41,7 +42,7 @@ class JSBSimRLEnv:
         assert self.fdm is not None
         try:
             return float(self.fdm[name])
-        except Exception:
+        except (KeyError, jsbsim.BaseError):
             return default
 
     def _observation(self) -> np.ndarray:
@@ -74,7 +75,6 @@ class JSBSimRLEnv:
         self.fdm["fcs/aileron-cmd-norm"] = float(aileron)
         self.fdm["fcs/rudder-cmd-norm"] = float(rudder)
         self.fdm["fcs/throttle-cmd-norm"] = throttle
-        self.fdm["propulsion/set-running"] = 1.0
 
     def _reward(self) -> float:
         altitude = self._get("position/h-sl-ft")
