@@ -75,7 +75,9 @@ from gym_env import JSBSimGymEnv
 
 env = JSBSimGymEnv()
 observation, info = env.reset(seed=42)
-observation, reward, terminated, truncated, info = env.step(np.zeros(4, dtype=np.float32))
+observation, reward, terminated, truncated, info = env.step(
+    np.zeros(4, dtype=np.float32)
+)
 ```
 
 Simulator failure is reported as `terminated`; reaching the configured step budget is reported as
