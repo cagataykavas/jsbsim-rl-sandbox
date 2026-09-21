@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from env import JSBSimConfig, JSBSimRLEnv
 
 
@@ -18,3 +17,5 @@ def test_environment_reset_and_step() -> None:
     assert np.isfinite(reward)
     assert not done
     assert info["step"] == 1
+    assert info["simulator_terminated"] is False
+    assert info["time_limit_reached"] is False
