@@ -5,14 +5,17 @@ from typing import Any, ClassVar, Protocol
 
 import gymnasium as gym
 import numpy as np
-from env import JSBSimConfig, JSBSimRLEnv
 from gymnasium import spaces
+
+from env import JSBSimConfig, JSBSimRLEnv
 
 
 class CoreEnvironment(Protocol):
     def reset(self) -> np.ndarray: ...
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict[str, Any]]: ...
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[np.ndarray, float, bool, dict[str, Any]]: ...
 
     def close(self) -> None: ...
 
@@ -39,7 +42,9 @@ class JSBSimGymEnv(gym.Env[np.ndarray, np.ndarray]):
         super().__init__()
         self.config = config or JSBSimConfig()
         self.action_space = spaces.Box(-1.0, 1.0, shape=(4,), dtype=np.float32)
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
+        self.observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32
+        )
         self._core = core_factory(self.config)
         self._needs_reset = True
 
@@ -58,9 +63,13 @@ class JSBSimGymEnv(gym.Env[np.ndarray, np.ndarray]):
         self._needs_reset = False
         return observation, {"seed": seed}
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         if self._needs_reset:
-            raise RuntimeError("reset() must be called before step() or after an episode ends")
+            raise RuntimeError(
+                "reset() must be called before step() or after an episode ends"
+            )
         validated_action = self._validated_action(action)
         observation, reward, done, info = self._core.step(validated_action)
         observation = self._validated_observation(observation)
@@ -69,7 +78,9 @@ class JSBSimGymEnv(gym.Env[np.ndarray, np.ndarray]):
 
         simulator_terminated = info.get("simulator_terminated")
         time_limit_reached = info.get("time_limit_reached")
-        if not isinstance(simulator_terminated, bool) or not isinstance(time_limit_reached, bool):
+        if not isinstance(simulator_terminated, bool) or not isinstance(
+            time_limit_reached, bool
+        ):
             raise TypeError("core did not provide boolean termination evidence")
         if done != (simulator_terminated or time_limit_reached):
             raise RuntimeError("core done flag conflicts with termination evidence")
