@@ -1,4 +1,5 @@
 jsbsim>=1.2
+gymnasium>=1.0
 numpy>=2.0
 pytest>=8.0
 ruff>=0.12
