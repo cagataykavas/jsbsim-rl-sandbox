@@ -28,7 +28,9 @@ class JSBSimRLEnv:
         fdm.set_debug_level(0)
         fdm.set_dt(self.config.dt)
         if not fdm.load_script(self.config.script):
-            raise RuntimeError(f"Could not load public JSBSim script: {self.config.script}")
+            raise RuntimeError(
+                f"Could not load public JSBSim script: {self.config.script}"
+            )
         if not fdm.run_ic():
             raise RuntimeError("JSBSim initial-condition run failed")
         return fdm
@@ -91,7 +93,9 @@ class JSBSimRLEnv:
             - 0.35 * min(1.0, pitch / 45.0)
         )
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
         if self.fdm is None:
             raise RuntimeError("reset() must be called before step()")
         self._apply_action(action)
