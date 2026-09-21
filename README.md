@@ -42,6 +42,8 @@ The default example uses the public `c1723.xml` script shipped with JSBSim. You 
 - configurable episode duration
 - simple altitude/attitude stabilization reward
 - reset/step API suitable for RL experiments
+- Gymnasium adapter with explicit terminated/truncated semantics
+- fail-closed action, observation and episode-lifecycle validation
 - deterministic random-policy smoke demo
 - CSV trajectory export
 
@@ -60,6 +62,32 @@ python demo.py --steps 800 --seed 42
 ```
 
 The demo executes a bounded random policy, prints a compact summary and writes a trajectory CSV under `artifacts/`.
+
+## Gymnasium integration
+
+`JSBSimGymEnv` exposes standard `Box` action/observation spaces and the five-value Gymnasium step
+contract, so it can be consumed by Gymnasium-compatible PPO/SAC implementations:
+
+```python
+import numpy as np
+
+from gym_env import JSBSimGymEnv
+
+env = JSBSimGymEnv()
+observation, info = env.reset(seed=42)
+observation, reward, terminated, truncated, info = env.step(
+    np.zeros(4, dtype=np.float32)
+)
+```
+
+Simulator failure is reported as `terminated`; reaching the configured step budget is reported as
+`truncated`. If both happen on the same step, simulator termination takes precedence. The adapter
+rejects malformed, non-finite and out-of-range actions, verifies observation/reward contracts, and
+requires a new reset after either terminal outcome. A fake core in unit tests exercises these
+semantics without pretending to validate aircraft physics.
+
+The reset seed controls Gymnasium and action-space randomness. The bundled JSBSim initial-condition
+script itself is deterministic and does not expose a separate stochastic seed through this adapter.
 
 ## Observation
 
@@ -90,13 +118,18 @@ The included reward is intentionally generic and non-tactical: remain near a tar
 
 ## Next steps
 
-- Gymnasium adapter
 - PPO/SAC baselines
 - multi-seed evaluation
 - public flight-envelope tasks
 - trim-state initialization
 - observation/action wrappers
 - richer telemetry plots
+
+## Validation
+
+GitHub Actions runs Ruff, formatting, tests, compilation and a bounded public JSBSim trajectory on
+Python 3.11, 3.12 and 3.13. The trajectory artifact demonstrates executable integration; it is not
+a stability, safety or controller-performance claim.
 
 ## License / attribution
 

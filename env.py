@@ -28,7 +28,9 @@ class JSBSimRLEnv:
         fdm.set_debug_level(0)
         fdm.set_dt(self.config.dt)
         if not fdm.load_script(self.config.script):
-            raise RuntimeError(f"Could not load public JSBSim script: {self.config.script}")
+            raise RuntimeError(
+                f"Could not load public JSBSim script: {self.config.script}"
+            )
         if not fdm.run_ic():
             raise RuntimeError("JSBSim initial-condition run failed")
         return fdm
@@ -54,16 +56,19 @@ class JSBSimRLEnv:
         p = self._get("velocities/p-rad_sec")
         q = self._get("velocities/q-rad_sec")
         r = self._get("velocities/r-rad_sec")
-        return np.asarray([
-            altitude / 10000.0,
-            airspeed / 250.0,
-            roll / 180.0,
-            pitch / 90.0,
-            heading / 360.0,
-            p,
-            q,
-            r,
-        ], dtype=np.float32)
+        return np.asarray(
+            [
+                altitude / 10000.0,
+                airspeed / 250.0,
+                roll / 180.0,
+                pitch / 90.0,
+                heading / 360.0,
+                p,
+                q,
+                r,
+            ],
+            dtype=np.float32,
+        )
 
     def _apply_action(self, action: np.ndarray) -> None:
         assert self.fdm is not None
@@ -88,18 +93,27 @@ class JSBSimRLEnv:
             - 0.35 * min(1.0, pitch / 45.0)
         )
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
         if self.fdm is None:
             raise RuntimeError("reset() must be called before step()")
         self._apply_action(action)
         running = bool(self.fdm.run())
         self.steps += 1
-        done = (not running) or self.steps >= self.config.max_steps
+        simulator_terminated = not running
+        time_limit_reached = self.steps >= self.config.max_steps
+        done = simulator_terminated or time_limit_reached
         info = {
             "step": self.steps,
+            "simulator_terminated": simulator_terminated,
+            "time_limit_reached": time_limit_reached,
             "altitude_ft": self._get("position/h-sl-ft"),
             "airspeed_kts": self._get("velocities/vc-kts"),
             "roll_deg": self._get("attitude/phi-deg"),
             "pitch_deg": self._get("attitude/theta-deg"),
         }
         return self._observation(), self._reward(), done, info
+
+    def close(self) -> None:
+        self.fdm = None

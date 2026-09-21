@@ -18,12 +18,15 @@ def run(steps: int, seed: int, output: Path) -> None:
 
     for _ in range(steps):
         # Small bounded perturbations around roughly level-flight controls.
-        action = np.asarray([
-            rng.normal(0.0, 0.08),
-            rng.normal(0.0, 0.08),
-            rng.normal(0.0, 0.04),
-            0.35 + rng.normal(0.0, 0.05),
-        ], dtype=np.float32)
+        action = np.asarray(
+            [
+                rng.normal(0.0, 0.08),
+                rng.normal(0.0, 0.08),
+                rng.normal(0.0, 0.04),
+                0.35 + rng.normal(0.0, 0.05),
+            ],
+            dtype=np.float32,
+        )
         _observation, reward, done, info = env.step(action)
         total_reward += reward
         rows.append({**info, "reward": reward})
