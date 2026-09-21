@@ -5,6 +5,7 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 import pytest
+
 from env import JSBSimConfig
 from gym_env import JSBSimGymEnv
 
@@ -27,7 +28,9 @@ class FakeCore:
         self.steps = 0
         return np.zeros(8, dtype=np.float32)
 
-    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[np.ndarray, float, bool, dict[str, Any]]:
         self.steps += 1
         terminated = self.terminate_at == self.steps
         truncated = self.steps >= self.config.max_steps
@@ -38,7 +41,12 @@ class FakeCore:
         }
         if self.invalid_evidence:
             info.pop("simulator_terminated")
-        return np.full(8, self.steps, dtype=np.float32), 1.0, terminated or truncated, info
+        return (
+            np.full(8, self.steps, dtype=np.float32),
+            1.0,
+            terminated or truncated,
+            info,
+        )
 
     def close(self) -> None:
         self.closed = True
