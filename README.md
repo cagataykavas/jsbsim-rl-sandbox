@@ -37,6 +37,7 @@ The default example uses the public `c1723.xml` script shipped with JSBSim. You 
 
 - Python wrapper around `jsbsim.FGFDMExec`
 - public JSBSim aircraft/script loading
+- explicit altitude/airspeed initial conditions for the single-aircraft baseline
 - normalized continuous elevator/aileron/rudder/throttle actions
 - compact observation vector
 - configurable episode duration

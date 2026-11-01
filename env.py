@@ -42,6 +42,9 @@ class JSBSimRLEnv:
         fdm.set_dt(self.config.dt)
         if not fdm.load_script(self.config.script):
             raise RuntimeError(f"Could not load public JSBSim script: {self.config.script}")
+        fdm["ic/h-sl-ft"] = self.config.target_altitude_ft
+        fdm["ic/vc-kts"] = 100.0
+        fdm["ic/psi-true-deg"] = 0.0
         if not fdm.run_ic():
             raise RuntimeError("JSBSim initial-condition run failed")
         return fdm

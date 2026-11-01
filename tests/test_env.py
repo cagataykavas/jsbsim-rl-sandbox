@@ -17,6 +17,8 @@ def test_environment_reset_and_step() -> None:
     assert observation.shape == (8,)
     assert next_observation.shape == (8,)
     assert np.isfinite(observation).all()
+    assert observation[0] == pytest.approx(0.3, abs=0.01)
+    assert observation[1] == pytest.approx(0.4, abs=0.01)
     assert np.isfinite(next_observation).all()
     assert np.isfinite(reward)
     assert not done
