@@ -44,6 +44,8 @@ The default example uses the public `c1723.xml` script shipped with JSBSim. You 
 - reset/step API suitable for RL experiments
 - deterministic random-policy smoke demo
 - CSV trajectory export
+- two-aircraft leader/follower episode using two independent public JSBSim instances
+- reproducible level-flight baseline with separation and tracking-error metrics
 
 ## Installation
 
@@ -57,9 +59,23 @@ pip install -r requirements.txt
 
 ```bash
 python demo.py --steps 800 --seed 42
+python evaluate_formation.py --steps 1200 --output-dir artifacts/formation
 ```
 
-The demo executes a bounded random policy, prints a compact summary and writes a trajectory CSV under `artifacts/`.
+The single-aircraft demo executes a bounded random policy and writes a trajectory CSV. The formation evaluation runs a fixed level-flight baseline and writes `formation_trajectory.csv` plus `formation_summary.json` under the selected output directory.
+
+## Two-aircraft benchmark
+
+`TwoAircraftFormationEnv` runs two separately initialized `c1723.xml` JSBSim instances. The leader holds a fixed level-flight input and the follower accepts normalized elevator, aileron, rudder and throttle actions. Both start at 3,000 ft and 100 kt with a 1,500 ft horizontal gap by default. The scenario is a generic public-simulator following task; it does not model a tactical intercept or any employer scenario.
+
+The episode exports step count, mean separation, separation RMSE against the configured target, minimum separation, mean and total reward, and termination reason. These are simulator benchmark measurements, not results from an RL-trained policy. Change the target gap, duration or public JSBSim script through `TwoAircraftConfig` or the CLI.
+
+Run the tests with:
+
+```bash
+python -m pytest -q
+ruff check .
+```
 
 ## Observation
 
