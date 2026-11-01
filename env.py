@@ -21,6 +21,7 @@ class TwoAircraftConfig:
 
     target_altitude_ft: float = 3000.0
     target_separation_ft: float = 1500.0
+    initial_separation_ft: float | None = None
     max_steps: int = 1200
     dt: float = 1.0 / 60.0
     script: str = "scripts/c1723.xml"
@@ -134,7 +135,7 @@ class TwoAircraftFormationEnv:
         self.initial_longitude_rad = 0.0
         self.initial_altitude_ft = 0.0
 
-    def _new_exec(self, latitude_deg: float, longitude_deg: float) -> jsbsim.FGFDMExec:
+    def _new_exec(self, latitude_deg: float, longitude_deg: float, heading_deg: float) -> jsbsim.FGFDMExec:
         fdm = jsbsim.FGFDMExec(None)
         fdm.set_debug_level(0)
         fdm.set_dt(self.config.dt)
@@ -144,7 +145,7 @@ class TwoAircraftFormationEnv:
         fdm["ic/long-gc-deg"] = longitude_deg
         fdm["ic/h-sl-ft"] = self.config.target_altitude_ft
         fdm["ic/vc-kts"] = 100.0
-        fdm["ic/psi-true-deg"] = 90.0
+        fdm["ic/psi-true-deg"] = heading_deg
         if not fdm.run_ic():
             raise RuntimeError("JSBSim initial-condition run failed")
         return fdm
@@ -157,14 +158,17 @@ class TwoAircraftFormationEnv:
             return default
 
     def reset(self) -> np.ndarray:
-        # The leader heads north; initialize the follower behind at the target gap.
+        # The leader heads north; initialize the follower south of it.
         latitude_deg = 37.0
         longitude_deg = -122.0
-        longitude_offset_deg = self.config.target_separation_ft / (
-            20_925_524.9 * np.cos(np.deg2rad(latitude_deg))
-        ) * 180.0 / np.pi
-        self.leader = self._new_exec(latitude_deg, longitude_deg)
-        self.follower = self._new_exec(latitude_deg, longitude_deg - longitude_offset_deg)
+        initial_separation = self.config.initial_separation_ft or self.config.target_separation_ft
+        latitude_offset_deg = initial_separation / 20_925_524.9 * 180.0 / np.pi
+        self.leader = self._new_exec(latitude_deg, longitude_deg, heading_deg=0.0)
+        self.follower = self._new_exec(
+            latitude_deg - latitude_offset_deg,
+            longitude_deg,
+            heading_deg=0.0,
+        )
         self.steps = 0
         self.initial_latitude_rad = np.deg2rad(self._get(self.leader, "position/lat-geod-deg"))
         self.initial_longitude_rad = np.deg2rad(self._get(self.leader, "position/long-gc-deg"))
@@ -189,6 +193,8 @@ class TwoAircraftFormationEnv:
         horizontal = float(np.hypot(delta_n, delta_e))
         distance_3d = float(np.hypot(horizontal, leader_alt - follower_alt))
         bearing_error_deg = float(np.rad2deg(np.arctan2(delta_e, delta_n)))
+        follower_heading_deg = self._get(self.follower, "attitude/psi-true-deg")
+        bearing_error_deg = (bearing_error_deg - follower_heading_deg + 180.0) % 360.0 - 180.0
         altitude_error = float(follower_alt - leader_alt)
         return distance_3d, horizontal, bearing_error_deg, altitude_error
 

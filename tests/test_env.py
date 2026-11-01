@@ -5,6 +5,7 @@ import pytest
 
 from env import JSBSimConfig, JSBSimRLEnv, TwoAircraftConfig, TwoAircraftFormationEnv
 from evaluate_formation import level_flight_policy, run_episode
+from formation_controller import FormationController
 
 
 def test_environment_reset_and_step() -> None:
@@ -87,3 +88,26 @@ def test_formation_evaluation_returns_reproducible_metric_schema() -> None:
     assert summary["target_separation_ft"] == config.target_separation_ft
     assert summary["separation_rmse_ft"] < 100.0
     assert summary["minimum_separation_ft"] >= config.separation_limit_ft
+
+
+def test_formation_controller_corrects_range_error_and_bounds_actions() -> None:
+    controller = FormationController()
+    too_far = np.asarray([0.5, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    too_close = np.asarray([-0.5, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+
+    accelerate = controller(too_far)
+    decelerate = controller(too_close)
+
+    assert accelerate.shape == (4,)
+    assert np.isfinite(accelerate).all()
+    assert np.all(accelerate >= -1.0)
+    assert np.all(accelerate <= 1.0)
+    assert accelerate[3] > decelerate[3]
+
+
+def test_proportional_controller_reduces_range_error_against_fixed_controls() -> None:
+    config = TwoAircraftConfig(max_steps=12_000, initial_separation_ft=2400.0)
+    _, fixed_summary = run_episode(level_flight_policy, config)
+    _, controller_summary = run_episode(FormationController(), config)
+
+    assert controller_summary["separation_rmse_ft"] < fixed_summary["separation_rmse_ft"] * 0.9

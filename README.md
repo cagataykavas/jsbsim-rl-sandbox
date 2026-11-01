@@ -45,7 +45,7 @@ The default example uses the public `c1723.xml` script shipped with JSBSim. You 
 - deterministic random-policy smoke demo
 - CSV trajectory export
 - two-aircraft leader/follower episode using two independent public JSBSim instances
-- reproducible level-flight baseline with separation and tracking-error metrics
+- bounded proportional controller and fixed-control comparison with tracking-error metrics
 
 ## Installation
 
@@ -59,16 +59,16 @@ pip install -r requirements.txt
 
 ```bash
 python demo.py --steps 800 --seed 42
-python evaluate_formation.py --steps 1200 --output-dir artifacts/formation
+python evaluate_formation.py --steps 12000 --output-dir artifacts/formation
 ```
 
-The single-aircraft demo executes a bounded random policy and writes a trajectory CSV. The formation evaluation runs a fixed level-flight baseline and writes `formation_trajectory.csv` plus `formation_summary.json` under the selected output directory.
+The single-aircraft demo executes a bounded random policy and writes a trajectory CSV. The formation evaluation compares fixed follower controls against a bounded proportional controller and writes both trajectories plus `formation_summary.json` under the selected output directory.
 
 ## Two-aircraft benchmark
 
-`TwoAircraftFormationEnv` runs two separately initialized `c1723.xml` JSBSim instances. The leader holds a fixed level-flight input and the follower accepts normalized elevator, aileron, rudder and throttle actions. Both start at 3,000 ft and 100 kt with a 1,500 ft horizontal gap by default. The scenario is a generic public-simulator following task; it does not model a tactical intercept or any employer scenario.
+`TwoAircraftFormationEnv` runs two separately initialized `c1723.xml` JSBSim instances. The leader follows the public script and the follower accepts normalized elevator, aileron, rudder and throttle actions. Both start at 3,000 ft and 100 kt. The default evaluation deliberately starts the follower 2,400 ft behind the leader and targets a 1,500 ft gap so range correction can be measured. The scenario is a generic public-simulator following task; it does not model a tactical intercept or any employer scenario.
 
-The episode exports step count, mean separation, separation RMSE against the configured target, minimum separation, mean and total reward, and termination reason. These are simulator benchmark measurements, not results from an RL-trained policy. Change the target gap, duration or public JSBSim script through `TwoAircraftConfig` or the CLI.
+The evaluation reports separation RMSE for both policies and the percentage reduction against fixed controls, alongside final/minimum separation and termination reason. One 12,000-step run (200 simulated seconds) reduced separation RMSE from 1,533.7 ft to 881.1 ft, a 42.6% reduction. The controller ended at 2,368.0 ft (minimum 2,351.8 ft), so it improved tracking over fixed controls but did not reach the 1,500 ft target. This is a deterministic proportional-control baseline result, not an RL result or a statistical confidence bound. Change the target gap, initial gap, duration or public JSBSim script through `TwoAircraftConfig` or the CLI.
 
 Run the tests with:
 
